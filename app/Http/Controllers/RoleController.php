@@ -6,19 +6,56 @@ use App\Models\Role;
 use App\Models\Permission;
 use App\Helpers\SweetAlert;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
 
 class RoleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $roles = Role::withCount('users')->get();
-        return view('roles.index', compact('roles'));
-    }
+        if ($request->ajax()) {
+            $roles = Role::withCount('users')->select('roles.*');
+            
+            return DataTables::of($roles)
+                ->addIndexColumn()
+                ->addColumn('users_count_badge', function($role) {
+                    return '<span class="badge bg-label-info">' . $role->users_count . ' Users</span>';
+                })
+                ->addColumn('description_short', function($role) {
+                    return $role->description ? 
+                        '<span title="' . $role->description . '">' . 
+                        (strlen($role->description) > 50 ? substr($role->description, 0, 50) . '...' : $role->description) . 
+                        '</span>' : 
+                        '<span class="text-muted">No description</span>';
+                })
+                ->addColumn('action', function($role) {
+                    $actions = '<div class="dropdown">
+                        <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                            <i class="bx bx-dots-vertical-rounded"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item btn-show" href="javascript:void(0)" data-id="' . $role->id . '">
+                                <i class="bx bx-show me-1"></i> View
+                            </a>
+                            <a class="dropdown-item btn-edit" href="javascript:void(0)" data-id="' . $role->id . '">
+                                <i class="bx bx-edit-alt me-1"></i> Edit
+                            </a>';
+                    
+                    if ($role->users_count == 0) {
+                        $actions .= '<a class="dropdown-item text-danger btn-delete" href="javascript:void(0)" data-id="' . $role->id . '" data-name="' . $role->display_name . '">
+                                <i class="bx bx-trash me-1"></i> Delete
+                            </a>';
+                    }
+                    
+                    $actions .= '</div></div>';
+                    
+                    return $actions;
+                })
+                ->rawColumns(['users_count_badge', 'description_short', 'action'])
+                ->make(true);
+        }
 
-    public function create()
-    {
         $permissions = Permission::all();
-        return view('roles.create', compact('permissions'));
+        return view('roles.index', compact('permissions'));
     }
 
     public function store(Request $request)
@@ -41,21 +78,28 @@ class RoleController extends Controller
             $role->permissions()->attach($request->permissions);
         }
 
-        SweetAlert::success('Success!', 'Role has been created successfully.');
-        return redirect()->route('roles.index');
+        return response()->json([
+            'success' => true,
+            'message' => 'Role created successfully!'
+        ]);
     }
 
     public function show(Role $role)
     {
         $role->load('permissions', 'users');
-        return view('roles.show', compact('role'));
+        return response()->json([
+            'success' => true,
+            'data' => $role
+        ]);
     }
 
     public function edit(Role $role)
     {
-        $permissions = Permission::all();
         $role->load('permissions');
-        return view('roles.edit', compact('role', 'permissions'));
+        return response()->json([
+            'success' => true,
+            'data' => $role
+        ]);
     }
 
     public function update(Request $request, Role $role)
@@ -76,22 +120,27 @@ class RoleController extends Controller
 
         $role->permissions()->sync($request->permissions ?? []);
 
-        SweetAlert::success('Success!', 'Role has been updated successfully.');
-        return redirect()->route('roles.index');
+        return response()->json([
+            'success' => true,
+            'message' => 'Role updated successfully!'
+        ]);
     }
 
     public function destroy(Role $role)
     {
-        // Prevent deleting role if it has users
         if ($role->users()->count() > 0) {
-            SweetAlert::error('Error!', 'Cannot delete role that has users assigned.');
-            return redirect()->back();
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete role that has users assigned.'
+            ], 400);
         }
 
         $role->permissions()->detach();
         $role->delete();
 
-        SweetAlert::success('Deleted!', 'Role has been deleted successfully.');
-        return redirect()->route('roles.index');
+        return response()->json([
+            'success' => true,
+            'message' => 'Role deleted successfully!'
+        ]);
     }
 }
