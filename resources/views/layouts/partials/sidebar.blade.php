@@ -39,14 +39,13 @@
             </a>
         </li>
 
+        @if(auth()->user()->hasPermission('manage_users'))
         <!-- Spacer -->
         <li class="menu-header small text-uppercase mt-3">
             <span class="menu-header-text" style="color: #a8aaae; font-weight: 600; letter-spacing: 0.5px;">
                 Management
             </span>
         </li>
-
-        @if(auth()->user()->hasPermission('manage_users'))
         <!-- Users Management -->
         <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
             <a href="{{ route('users.index') }}" class="menu-link">

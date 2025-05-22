@@ -154,6 +154,7 @@
         </div>
     </div>
 
+    @if(auth()->user()->hasPermission('manage_users'))
     <!-- Statistics Cards -->
     <div class="row mb-4">
         <div class="col-lg-3 col-md-6 col-sm-6 mb-4">
@@ -394,6 +395,7 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
 @endsection
 
