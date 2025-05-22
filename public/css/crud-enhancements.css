@@ -1,0 +1,68 @@
+/* Enhanced CRUD Styles */
+.table-responsive {
+    border-radius: 0.375rem;
+}
+
+.btn-group .btn {
+    border-radius: 0.375rem;
+}
+
+.alert {
+    border-radius: 0.375rem;
+    border: none;
+}
+
+.badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.dropdown-menu {
+    border-radius: 0.375rem;
+    box-shadow: 0 0.25rem 1rem rgba(161, 172, 184, 0.45);
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(105, 108, 255, 0.08);
+    color: #696cff;
+}
+
+.modal-content {
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 2rem rgba(161, 172, 184, 0.3);
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(161, 172, 184, 0.4);
+}
+
+/* Selection styles */
+#selectionInfo {
+    margin-bottom: 1rem !important;
+    border-left: 4px solid #696cff;
+}
+
+.table th {
+    border-bottom: 2px solid #d9dee3;
+    font-weight: 600;
+    color: #5a6169;
+}
+
+/* Loading overlay */
+.dataTables_processing {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #696cff !important;
+}
+
+/* Responsive badges */
+@media (max-width: 768px) {
+    .badge {
+        font-size: 0.6rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
