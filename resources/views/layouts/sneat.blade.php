@@ -43,6 +43,11 @@
 
     <link rel="stylesheet" href="{{ asset('css/dashboard-enhancement.css') }}" />
 
+    <!-- User Management Responsive CSS -->
+    <link rel="stylesheet" href="{{ asset('css/user-management-responsive.css') }}" />
+
+    <link rel="stylesheet" href="{{ asset('css/role-management-enhancements.css') }}" />
+
     <style>
         .bg-gradient-primary {
             background: linear-gradient(135deg, #696cff 0%, #9155fd 100%) !important;
@@ -108,6 +113,11 @@
     <script src="{{ asset('sneat/assets/js/main.js') }}"></script>
 
     <!-- Page JS -->
+
+    @push('scripts')
+    <!-- Existing scripts -->
+    <script src="{{ asset('js/role-management-utils.js') }}"></script>
+    @endpush
     
     <!-- SweetAlert Handler -->
     @if(session('swal'))

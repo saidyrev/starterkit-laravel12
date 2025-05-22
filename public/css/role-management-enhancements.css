@@ -1,0 +1,235 @@
+/* Role Management Specific Enhancements */
+
+/* Role Icon Animations */
+.role-icon {
+    transition: all 0.3s ease;
+}
+
+.role-info-cell:hover .role-icon {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(105, 108, 255, 0.3);
+}
+
+/* Permission Grid Enhancements */
+.permission-grid {
+    border: 2px dashed #e4e6ea;
+    transition: border-color 0.3s ease;
+}
+
+.permission-grid:hover {
+    border-color: #696cff;
+}
+
+.permission-item {
+    cursor: pointer;
+    user-select: none;
+}
+
+.permission-item:hover {
+    transform: translateY(-1px);
+}
+
+.permission-item.selected {
+    border-color: #696cff;
+    background: linear-gradient(
+        135deg,
+        rgba(105, 108, 255, 0.1) 0%,
+        rgba(145, 85, 253, 0.05) 100%
+    );
+    box-shadow: 0 2px 8px rgba(105, 108, 255, 0.15);
+}
+
+.permission-item .form-check-input:checked {
+    background-color: #696cff;
+    border-color: #696cff;
+}
+
+/* Permission Chips */
+.permission-chip {
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+.permission-chip:hover {
+    background: rgba(105, 108, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+/* Role Code Styling */
+.role-code {
+    transition: all 0.2s ease;
+}
+
+.role-details:hover .role-code {
+    background: rgba(105, 108, 255, 0.2);
+    color: #696cff;
+}
+
+/* Enhanced Modal Styling */
+.modal-header {
+    background: linear-gradient(135deg, #ff3e1d 0%, #ff6a47 100%);
+    border-radius: 12px 12px 0 0;
+}
+
+.role-detail-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    border: 1px solid #e4e6ea;
+    transition: all 0.3s ease;
+}
+
+.role-detail-card:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Bulk Actions Styling */
+.bulk-actions {
+    background: linear-gradient(135deg, #ff3e1d 0%, #ff6a47 100%);
+}
+
+/* Statistics Cards - Role Specific Colors */
+.stats-widget[style*="--accent-color: #ff3e1d"] {
+    border-left: 4px solid #ff3e1d;
+}
+
+.stats-widget[style*="--accent-color: #28c76f"] {
+    border-left: 4px solid #28c76f;
+}
+
+.stats-widget[style*="--accent-color: #ffab00"] {
+    border-left: 4px solid #ffab00;
+}
+
+.stats-widget[style*="--accent-color: #696cff"] {
+    border-left: 4px solid #696cff;
+}
+
+/* Loading States */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Success/Error States */
+.alert-success {
+    background: rgba(40, 199, 111, 0.1);
+    border-color: rgba(40, 199, 111, 0.2);
+    color: #28c76f;
+    border-radius: 8px;
+}
+
+.alert-danger {
+    background: rgba(255, 62, 29, 0.1);
+    border-color: rgba(255, 62, 29, 0.2);
+    color: #ff3e1d;
+    border-radius: 8px;
+}
+
+/* Enhanced Tooltips */
+[title] {
+    position: relative;
+}
+
+/* Role Management Header Animation */
+.role-management-header {
+    animation: slideInDown 0.8s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Statistics Cards Animation */
+.stats-widget {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+.stats-widget:nth-child(1) {
+    animation-delay: 0.1s;
+}
+.stats-widget:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.stats-widget:nth-child(3) {
+    animation-delay: 0.3s;
+}
+.stats-widget:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile Enhancements */
+@media (max-width: 768px) {
+    .permission-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .permission-item {
+        padding: 0.75rem;
+    }
+
+    .role-management-header .col-md-4 {
+        display: none;
+    }
+
+    .bulk-actions .d-flex {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+    .permission-item {
+        background: #2f3349;
+        border-color: #404253;
+        color: #a8aaae;
+    }
+
+    .permission-item.selected {
+        background: rgba(105, 108, 255, 0.2);
+        border-color: #696cff;
+    }
+
+    .role-code {
+        background: rgba(105, 108, 255, 0.2);
+        color: #a8aaae;
+    }
+}

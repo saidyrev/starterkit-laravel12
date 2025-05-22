@@ -4,63 +4,136 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\Permission;
-use App\Helpers\SweetAlert;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use Carbon\Carbon;
 
 class RoleController extends Controller
 {
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $roles = Role::withCount('users')->select('roles.*');
+            $roles = Role::withCount(['users', 'permissions'])->select('roles.*');
+            
+            // Apply filters
+            if ($request->filled('users_filter')) {
+                if ($request->users_filter === 'with_users') {
+                    $roles->has('users');
+                } else {
+                    $roles->doesntHave('users');
+                }
+            }
+            
+            if ($request->filled('permissions_filter')) {
+                if ($request->permissions_filter === 'with_permissions') {
+                    $roles->has('permissions');
+                } else {
+                    $roles->doesntHave('permissions');
+                }
+            }
+            
+            if ($request->filled('date_range')) {
+                $dateRange = explode(' to ', $request->date_range);
+                if (count($dateRange) === 2) {
+                    $roles->whereBetween('created_at', [
+                        Carbon::parse($dateRange[0])->startOfDay(),
+                        Carbon::parse($dateRange[1])->endOfDay()
+                    ]);
+                }
+            }
             
             return DataTables::of($roles)
                 ->addIndexColumn()
                 ->addColumn('checkbox', function($role) {
                     return '<input type="checkbox" class="role-checkbox" value="' . $role->id . '">';
                 })
+                ->addColumn('role_info', function($role) {
+                    $iconClass = match($role->name) {
+                        'admin' => 'bx-shield-quarter text-danger',
+                        'editor' => 'bx-edit text-warning',
+                        'manager' => 'bx-user-pin text-info',
+                        default => 'bx-group text-primary'
+                    };
+                    
+                    return '
+                    <div class="role-info-cell">
+                        <div class="role-icon-container">
+                            <div class="role-icon">
+                                <i class="bx ' . $iconClass . '"></i>
+                            </div>
+                        </div>
+                        <div class="role-details">
+                            <div class="role-name">' . $role->display_name . '</div>
+                            <div class="role-code" title="' . $role->name . '">' . $role->name . '</div>
+                        </div>
+                    </div>';
+                })
+                ->addColumn('description_badge', function($role) {
+                    if ($role->description) {
+                        $shortDesc = strlen($role->description) > 50 ? 
+                            substr($role->description, 0, 50) . '...' : 
+                            $role->description;
+                        return '<span class="badge bg-label-info rounded-pill" title="' . $role->description . '">
+                            <i class="bx bx-info-circle me-1"></i>' . $shortDesc . '
+                        </span>';
+                    }
+                    return '<span class="badge bg-label-secondary rounded-pill">
+                        <i class="bx bx-minus me-1"></i>No description
+                    </span>';
+                })
                 ->addColumn('users_count_badge', function($role) {
-                    $badgeClass = $role->users_count > 0 ? 'bg-label-info' : 'bg-label-secondary';
-                    return '<span class="badge ' . $badgeClass . '">' . $role->users_count . ' Users</span>';
+                    $badgeClass = $role->users_count > 0 ? 'bg-label-success' : 'bg-label-secondary';
+                    $icon = $role->users_count > 0 ? 'bx-user-check' : 'bx-user-x';
+                    return '<span class="badge ' . $badgeClass . ' rounded-pill">
+                        <i class="bx ' . $icon . ' me-1"></i>' . $role->users_count . ' Users
+                    </span>';
                 })
-                ->addColumn('permissions_count', function($role) {
-                    $permissionsCount = $role->permissions()->count();
-                    return '<span class="badge bg-label-primary">' . $permissionsCount . ' Permissions</span>';
-                })
-                ->addColumn('description_short', function($role) {
-                    return $role->description ? 
-                        '<span title="' . $role->description . '">' . 
-                        (strlen($role->description) > 50 ? substr($role->description, 0, 50) . '...' : $role->description) . 
-                        '</span>' : 
-                        '<span class="text-muted">No description</span>';
+                ->addColumn('permissions_count_badge', function($role) {
+                    $badgeClass = $role->permissions_count > 0 ? 'bg-label-primary' : 'bg-label-secondary';
+                    $icon = $role->permissions_count > 0 ? 'bx-shield-alt-2' : 'bx-shield-x';
+                    return '<span class="badge ' . $badgeClass . ' rounded-pill">
+                        <i class="bx ' . $icon . ' me-1"></i>' . $role->permissions_count . ' Permissions
+                    </span>';
                 })
                 ->addColumn('created_formatted', function($role) {
-                    return $role->created_at->format('M d, Y') . '<br><small class="text-muted">' . $role->created_at->diffForHumans() . '</small>';
+                    return '<div class="text-nowrap">
+                        <small class="text-muted">
+                            <i class="bx bx-calendar me-1"></i>
+                            ' . $role->created_at->format('M d, Y') . '
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="bx bx-time me-1"></i>
+                            ' . $role->created_at->diffForHumans() . '
+                        </small>
+                    </div>';
                 })
                 ->addColumn('action', function($role) {
-                    $actions = '<div class="dropdown">
-                        <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                    $actions = '
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
                             <i class="bx bx-dots-vertical-rounded"></i>
                         </button>
-                        <div class="dropdown-menu">
+                        <div class="dropdown-menu dropdown-menu-end">
                             <a class="dropdown-item btn-show" href="javascript:void(0)" data-id="' . $role->id . '">
                                 <i class="bx bx-show me-1"></i> View Details
                             </a>
                             <a class="dropdown-item btn-edit" href="javascript:void(0)" data-id="' . $role->id . '">
-                                <i class="bx bx-edit-alt me-1"></i> Edit
-                            </a>
-                            <a class="dropdown-item btn-clone" href="javascript:void(0)" data-id="' . $role->id . '">
-                                <i class="bx bx-copy me-1"></i> Clone
+                                <i class="bx bx-edit-alt me-1"></i> Edit Role
                             </a>
                             <a class="dropdown-item btn-permissions" href="javascript:void(0)" data-id="' . $role->id . '">
                                 <i class="bx bx-lock-open-alt me-1"></i> Manage Permissions
+                            </a>
+                            <a class="dropdown-item btn-clone" href="javascript:void(0)" data-id="' . $role->id . '">
+                                <i class="bx bx-copy me-1"></i> Clone Role
                             </a>';
                     
                     if ($role->users_count == 0) {
-                        $actions .= '<div class="dropdown-divider"></div>
-                            <a class="dropdown-item text-danger btn-delete" href="javascript:void(0)" data-id="' . $role->id . '" data-name="' . $role->display_name . '">
-                                <i class="bx bx-trash me-1"></i> Delete
+                        $actions .= '
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item text-danger btn-delete" href="javascript:void(0)" 
+                               data-id="' . $role->id . '" data-name="' . $role->display_name . '">
+                                <i class="bx bx-trash me-1"></i> Delete Role
                             </a>';
                     }
                     
@@ -68,12 +141,19 @@ class RoleController extends Controller
                     
                     return $actions;
                 })
-                ->rawColumns(['checkbox', 'users_count_badge', 'permissions_count', 'description_short', 'created_formatted', 'action'])
+                ->rawColumns(['checkbox', 'role_info', 'description_badge', 'users_count_badge', 'permissions_count_badge', 'created_formatted', 'action'])
                 ->make(true);
         }
 
         $permissions = Permission::all();
-        return view('roles.index', compact('permissions'));
+        $stats = [
+            'total' => Role::count(),
+            'with_users' => Role::has('users')->count(),
+            'without_users' => Role::doesntHave('users')->count(),
+            'this_month' => Role::whereMonth('created_at', Carbon::now()->month)->count(),
+        ];
+
+        return view('roles.index', compact('permissions', 'stats'));
     }
 
     public function store(Request $request)
@@ -98,17 +178,25 @@ class RoleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Role created successfully!',
-            'data' => $role
+            'message' => 'Role created successfully!'
         ]);
     }
 
     public function show(Role $role)
     {
-        $role->load('permissions', 'users');
+        $role->load(['permissions', 'users']);
+        
+        $roleStats = [
+            'days_since_created' => $role->created_at->diffInDays(now()),
+            'users_count' => $role->users->count(),
+            'permissions_count' => $role->permissions->count(),
+            'last_updated' => $role->updated_at->diffForHumans(),
+        ];
+
         return response()->json([
             'success' => true,
-            'data' => $role
+            'data' => $role,
+            'stats' => $roleStats
         ]);
     }
 
@@ -141,8 +229,7 @@ class RoleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Role updated successfully!',
-            'data' => $role
+            'message' => 'Role updated successfully!'
         ]);
     }
 
@@ -165,7 +252,6 @@ class RoleController extends Controller
         ]);
     }
 
-    // Clone Role
     public function clone(Role $role)
     {
         $clonedRole = $role->replicate();
@@ -184,15 +270,15 @@ class RoleController extends Controller
         ]);
     }
 
-    // Bulk Delete
-    public function bulkDelete(Request $request)
+    public function bulkAction(Request $request)
     {
         $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:roles,id'
+            'action' => 'required|in:delete',
+            'role_ids' => 'required|array',
+            'role_ids.*' => 'exists:roles,id'
         ]);
 
-        $rolesWithUsers = Role::whereIn('id', $request->ids)
+        $rolesWithUsers = Role::whereIn('id', $request->role_ids)
             ->has('users')
             ->pluck('display_name');
 
@@ -203,25 +289,37 @@ class RoleController extends Controller
             ], 400);
         }
 
-        $deletedCount = Role::whereIn('id', $request->ids)->delete();
+        $count = Role::whereIn('id', $request->role_ids)->count();
+        Role::whereIn('id', $request->role_ids)->delete();
 
         return response()->json([
             'success' => true,
-            'message' => "{$deletedCount} roles deleted successfully!"
+            'message' => "{$count} roles deleted successfully!"
         ]);
     }
 
-    // Export Roles
     public function export(Request $request)
     {
-        $roles = Role::withCount('users')->with('permissions')->get();
+        $roles = Role::withCount(['users', 'permissions'])->with('permissions');
+        
+        // Apply same filters as index
+        if ($request->filled('users_filter')) {
+            if ($request->users_filter === 'with_users') {
+                $roles->has('users');
+            } else {
+                $roles->doesntHave('users');
+            }
+        }
+
+        $roles = $roles->get();
         
         $csvData = [];
-        $csvData[] = ['Name', 'Display Name', 'Description', 'Users Count', 'Permissions', 'Created At']; // Header
+        $csvData[] = ['ID', 'Name', 'Display Name', 'Description', 'Users Count', 'Permissions', 'Created At'];
         
         foreach ($roles as $role) {
             $permissions = $role->permissions->pluck('display_name')->implode(', ');
             $csvData[] = [
+                $role->id,
                 $role->name,
                 $role->display_name,
                 $role->description ?: 'No description',
