@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet" />
 
     <!-- Icons. Uncomment required icon fonts -->
-    <link rel="stylesheet" href="{{ asset('sneat/assets/vendor/fonts/boxicons.css') }}" />
+    <link rel="stylesheet" href="{{ asset('sneat/assets/vendor/fonts/iconify-icons.css') }}" />
 
     <!-- Core CSS -->
     <link rel="stylesheet" href="{{ asset('sneat/assets/vendor/css/core.css') }}" class="template-customizer-core-css" />
@@ -36,6 +36,22 @@
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link rel="stylesheet" href="{{ asset('css/crud-enhancements.css') }}" />
+
+    <link rel="stylesheet" href="{{ asset('css/sidebar-enhancement.css') }}" />
+
+    <link rel="stylesheet" href="{{ asset('css/dashboard-enhancement.css') }}" />
+
+    <style>
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #696cff 0%, #9155fd 100%) !important;
+        }
+
+        .text-white-50 {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+    </style>
 
     @stack('styles')
 </head>

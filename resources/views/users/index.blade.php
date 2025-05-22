@@ -14,7 +14,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">All Users</h5>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal" id="btnAddUser">
+            <button type="button" class="btn btn-primary" id="btnAddUser">
                 <i class="bx bx-plus me-1"></i> Add User
             </button>
         </div>
@@ -24,12 +24,11 @@
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>Avatar</th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Role</th>
                             <th>Created</th>
-                            <th>Actions</th>
+                            <th width="120">Actions</th>
                         </tr>
                     </thead>
                 </table>
@@ -40,11 +39,11 @@
 
 <!-- User Modal -->
 <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="userModalTitle">Add User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="userForm">
                 <div class="modal-body">
@@ -65,19 +64,15 @@
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="mb-3">
-                                <label for="role_id" class="form-label">Role</label>
-                                <select class="form-select" id="role_id" name="role_id" required>
-                                    <option value="">Select Role</option>
-                                    @foreach($roles as $role)
-                                        <option value="{{ $role->id }}">{{ $role->display_name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
+                    <div class="mb-3">
+                        <label for="role_id" class="form-label">Role</label>
+                        <select class="form-select" id="role_id" name="role_id" required>
+                            <option value="">Select Role</option>
+                            @foreach($roles as $role)
+                                <option value="{{ $role->id }}">{{ $role->display_name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="invalid-feedback"></div>
                     </div>
                     
                     <div class="row" id="passwordFields">
@@ -93,7 +88,6 @@
                             <div class="mb-3">
                                 <label for="password_confirmation" class="form-label">Confirm Password</label>
                                 <input type="password" class="form-control" id="password_confirmation" name="password_confirmation">
-                                <div class="invalid-feedback"></div>
                             </div>
                         </div>
                     </div>
@@ -109,11 +103,11 @@
 
 <!-- User Detail Modal -->
 <div class="modal fade" id="userDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">User Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="userDetailContent">
                 <!-- Content will be loaded here -->
@@ -134,15 +128,24 @@
 
 <script>
 $(document).ready(function() {
+    // CSRF Token Setup
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+
     // Initialize DataTable
     var table = $('#usersTable').DataTable({
         processing: true,
         serverSide: true,
         responsive: true,
-        ajax: "{{ route('users.index') }}",
+        ajax: {
+            url: "{{ route('users.index') }}",
+            type: "GET"
+        },
         columns: [
             {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-            {data: 'avatar', name: 'avatar', orderable: false, searchable: false},
             {data: 'name', name: 'name'},
             {data: 'email', name: 'email'},
             {data: 'role_name', name: 'role.display_name'},
@@ -150,21 +153,19 @@ $(document).ready(function() {
             {data: 'action', name: 'action', orderable: false, searchable: false}
         ],
         pageLength: 10,
-        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
         language: {
-            processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>',
-            emptyTable: "No users found",
-            zeroRecords: "No matching users found"
+            processing: '<div class="spinner-border text-primary" role="status"></div>',
+            emptyTable: "No users found"
         }
     });
 
-    // Add User Button
+    // Add User
     $('#btnAddUser').click(function() {
         resetForm();
         $('#userModalTitle').text('Add User');
         $('#btnSaveUser').text('Save User');
-        $('#passwordFields input').prop('required', true);
-        $('#passwordHelp').show();
+        $('#password, #password_confirmation').prop('required', true);
+        $('#passwordHelp').text('Minimum 8 characters');
         $('#userModal').modal('show');
     });
 
@@ -173,78 +174,56 @@ $(document).ready(function() {
         var userId = $(this).data('id');
         resetForm();
         
-        $.get('{{ url("users") }}/' + userId + '/edit', function(response) {
-            if (response.success) {
-                var user = response.data;
-                $('#userModalTitle').text('Edit User');
-                $('#btnSaveUser').text('Update User');
-                $('#name').val(user.name);
-                $('#email').val(user.email);
-                $('#role_id').val(user.role_id);
-                $('#passwordFields input').prop('required', false);
-                $('#passwordHelp').text('Leave blank to keep current password').show();
-                $('#userForm').data('user-id', userId);
-                $('#userModal').modal('show');
-            }
-        });
+        $.get("{{ url('users') }}/" + userId + "/edit")
+            .done(function(response) {
+                if (response.success) {
+                    var user = response.data;
+                    $('#userModalTitle').text('Edit User');
+                    $('#btnSaveUser').text('Update User');
+                    $('#name').val(user.name);
+                    $('#email').val(user.email);
+                    $('#role_id').val(user.role_id);
+                    $('#password, #password_confirmation').prop('required', false);
+                    $('#passwordHelp').text('Leave blank to keep current password');
+                    $('#userForm').data('user-id', userId);
+                    $('#userModal').modal('show');
+                }
+            })
+            .fail(function() {
+                Swal.fire('Error!', 'Failed to load user data', 'error');
+            });
     });
 
-    // Show User Details
+    // Show User
     $(document).on('click', '.btn-show', function() {
         var userId = $(this).data('id');
         
-        $.get('{{ url("users") }}/' + userId, function(response) {
-            if (response.success) {
-                var user = response.data;
-                var roleHtml = user.role ? 
-                    '<span class="badge bg-label-' + getRoleBadgeClass(user.role.name) + '">' + user.role.display_name + '</span>' :
-                    '<span class="badge bg-label-secondary">No Role</span>';
-                
-                var permissionsHtml = '';
-                if (user.role && user.role.permissions && user.role.permissions.length > 0) {
-                    user.role.permissions.forEach(function(permission) {
-                        permissionsHtml += '<span class="badge bg-label-primary me-1 mb-1">' + permission.display_name + '</span>';
-                    });
-                } else {
-                    permissionsHtml = '<span class="text-muted">No permissions assigned</span>';
+        $.get("{{ url('users') }}/" + userId)
+            .done(function(response) {
+                if (response.success) {
+                    var user = response.data;
+                    var roleHtml = user.role ? 
+                        '<span class="badge bg-primary">' + user.role.display_name + '</span>' :
+                        '<span class="badge bg-secondary">No Role</span>';
+                    
+                    var content = `
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>${user.name}</h5>
+                                <p><strong>Email:</strong> ${user.email}</p>
+                                <p><strong>Role:</strong> ${roleHtml}</p>
+                                <p><strong>Created:</strong> ${new Date(user.created_at).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    $('#userDetailContent').html(content);
+                    $('#userDetailModal').modal('show');
                 }
-                
-                var content = `
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="avatar avatar-lg me-3">
-                            <img src="{{ asset('sneat/assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle">
-                        </div>
-                        <div>
-                            <h4 class="mb-1">${user.name}</h4>
-                            ${roleHtml}
-                        </div>
-                    </div>
-                    <div class="info-container">
-                        <ul class="list-unstyled">
-                            <li class="mb-3">
-                                <span class="fw-bold me-2">Email:</span>
-                                <span>${user.email}</span>
-                            </li>
-                            <li class="mb-3">
-                                <span class="fw-bold me-2">Role:</span>
-                                ${roleHtml}
-                            </li>
-                            <li class="mb-3">
-                                <span class="fw-bold me-2">Created:</span>
-                                <span>${new Date(user.created_at).toLocaleDateString()}</span>
-                            </li>
-                            <li class="mb-3">
-                                <span class="fw-bold me-2">Permissions:</span>
-                                <br>${permissionsHtml}
-                            </li>
-                        </ul>
-                    </div>
-                `;
-                
-                $('#userDetailContent').html(content);
-                $('#userDetailModal').modal('show');
-            }
-        });
+            })
+            .fail(function() {
+                Swal.fire('Error!', 'Failed to load user details', 'error');
+            });
     });
 
     // Delete User
@@ -254,20 +233,17 @@ $(document).ready(function() {
         
         Swal.fire({
             title: 'Are you sure?',
-            text: `You want to delete user "${userName}"?`,
+            text: `Delete user "${userName}"?`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!'
+            confirmButtonText: 'Yes, delete!'
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '{{ url("users") }}/' + userId,
+                    url: "{{ url('users') }}/" + userId,
                     type: 'DELETE',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
                     success: function(response) {
                         if (response.success) {
                             Swal.fire('Deleted!', response.message, 'success');
@@ -276,7 +252,7 @@ $(document).ready(function() {
                     },
                     error: function(xhr) {
                         var response = xhr.responseJSON;
-                        Swal.fire('Error!', response.message || 'Something went wrong!', 'error');
+                        Swal.fire('Error!', response?.message || 'Something went wrong!', 'error');
                     }
                 });
             }
@@ -289,15 +265,13 @@ $(document).ready(function() {
         
         var formData = $(this).serialize();
         var userId = $(this).data('user-id');
-        var url = userId ? '{{ url("users") }}/' + userId : '{{ route("users.store") }}';
-        var method = userId ? 'PUT' : 'POST';
+        var url = userId ? "{{ url('users') }}/" + userId : "{{ route('users.store') }}";
         
         if (userId) {
             formData += '&_method=PUT';
         }
-        formData += '&_token={{ csrf_token() }}';
         
-        // Clear previous errors
+        // Clear errors
         $('.is-invalid').removeClass('is-invalid');
         $('.invalid-feedback').text('');
         
@@ -306,7 +280,7 @@ $(document).ready(function() {
             type: 'POST',
             data: formData,
             beforeSend: function() {
-                $('#btnSaveUser').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status"></span>Saving...');
+                $('#btnSaveUser').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
             },
             success: function(response) {
                 if (response.success) {
@@ -316,36 +290,30 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr) {
-                var errors = xhr.responseJSON.errors;
+                var errors = xhr.responseJSON?.errors;
                 if (errors) {
                     $.each(errors, function(field, messages) {
                         var input = $('#' + field);
                         input.addClass('is-invalid');
                         input.siblings('.invalid-feedback').text(messages[0]);
                     });
+                } else {
+                    Swal.fire('Error!', 'Something went wrong!', 'error');
                 }
             },
             complete: function() {
-                $('#btnSaveUser').prop('disabled', false).text($('#userModalTitle').text().includes('Add') ? 'Save User' : 'Update User');
+                var isEdit = $('#userModalTitle').text().includes('Edit');
+                $('#btnSaveUser').prop('disabled', false).text(isEdit ? 'Update User' : 'Save User');
             }
         });
     });
 
-    // Reset Form
+    // Reset Form Function
     function resetForm() {
         $('#userForm')[0].reset();
         $('#userForm').removeData('user-id');
         $('.is-invalid').removeClass('is-invalid');
         $('.invalid-feedback').text('');
-    }
-
-    // Get role badge class
-    function getRoleBadgeClass(roleName) {
-        switch(roleName) {
-            case 'admin': return 'danger';
-            case 'editor': return 'warning';
-            default: return 'info';
-        }
     }
 });
 </script>

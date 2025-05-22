@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Role;
-use App\Helpers\SweetAlert;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -12,56 +11,50 @@ use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     */
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $users = User::with('role')->select('users.*');
+            $users = User::with('role')->get();
             
             return DataTables::of($users)
                 ->addIndexColumn()
                 ->addColumn('role_name', function($user) {
                     if ($user->role) {
-                        $badgeClass = match($user->role->name) {
-                            'admin' => 'bg-label-danger',
-                            'editor' => 'bg-label-warning',
-                            default => 'bg-label-info'
-                        };
-                        return '<span class="badge ' . $badgeClass . '">' . $user->role->display_name . '</span>';
+                        return '<span class="badge bg-primary">' . $user->role->display_name . '</span>';
                     }
-                    return '<span class="badge bg-label-secondary">No Role</span>';
-                })
-                ->addColumn('avatar', function($user) {
-                    return '<div class="avatar avatar-sm me-3">
-                        <img src="' . asset('sneat/assets/img/avatars/1.png') . '" alt="Avatar" class="rounded-circle">
-                    </div>';
+                    return '<span class="badge bg-secondary">No Role</span>';
                 })
                 ->addColumn('created_formatted', function($user) {
                     return $user->created_at->format('M d, Y');
                 })
                 ->addColumn('action', function($user) {
-                    $actions = '<div class="dropdown">
-                        <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                            <i class="bx bx-dots-vertical-rounded"></i>
-                        </button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item btn-show" href="javascript:void(0)" data-id="' . $user->id . '">
-                                <i class="bx bx-show me-1"></i> View
-                            </a>
-                            <a class="dropdown-item btn-edit" href="javascript:void(0)" data-id="' . $user->id . '">
-                                <i class="bx bx-edit-alt me-1"></i> Edit
-                            </a>';
+                    $actions = '<div class="btn-group" role="group">';
                     
+                    // Show button
+                    $actions .= '<button type="button" class="btn btn-sm btn-outline-info btn-show" data-id="' . $user->id . '" title="View">
+                        <i class="bx bx-show"></i>
+                    </button>';
+                    
+                    // Edit button
+                    $actions .= '<button type="button" class="btn btn-sm btn-outline-primary btn-edit" data-id="' . $user->id . '" title="Edit">
+                        <i class="bx bx-edit"></i>
+                    </button>';
+                    
+                    // Delete button (tidak untuk user sendiri)
                     if ($user->id !== auth()->id()) {
-                        $actions .= '<a class="dropdown-item text-danger btn-delete" href="javascript:void(0)" data-id="' . $user->id . '" data-name="' . $user->name . '">
-                                <i class="bx bx-trash me-1"></i> Delete
-                            </a>';
+                        $actions .= '<button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="' . $user->id . '" data-name="' . $user->name . '" title="Delete">
+                            <i class="bx bx-trash"></i>
+                        </button>';
                     }
                     
-                    $actions .= '</div></div>';
+                    $actions .= '</div>';
                     
                     return $actions;
                 })
-                ->rawColumns(['role_name', 'avatar', 'action'])
+                ->rawColumns(['role_name', 'action'])
                 ->make(true);
         }
 
@@ -69,6 +62,9 @@ class UserController extends Controller
         return view('users.index', compact('roles'));
     }
 
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -91,6 +87,9 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Display the specified resource.
+     */
     public function show(User $user)
     {
         $user->load('role');
@@ -100,6 +99,9 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Show the form for editing the specified resource.
+     */
     public function edit(User $user)
     {
         $user->load('role');
@@ -109,6 +111,9 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Update the specified resource in storage.
+     */
     public function update(Request $request, User $user)
     {
         $request->validate([
@@ -136,8 +141,12 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Remove the specified resource from storage.
+     */
     public function destroy(User $user)
     {
+        // Cegah user menghapus dirinya sendiri
         if ($user->id === auth()->id()) {
             return response()->json([
                 'success' => false,

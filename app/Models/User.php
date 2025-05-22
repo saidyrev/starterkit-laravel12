@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -15,6 +16,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role_id',
+        'avatar', // Tambah in
     ];
 
     protected $hidden = [
@@ -55,5 +57,15 @@ class User extends Authenticatable
             }
         }
         return false;
+    }
+
+    // Accessor untuk avatar URL
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar && Storage::exists('public/avatars/' . $this->avatar)) {
+        return Storage::url('avatars/' . $this->avatar);
+        }
+    
+        return asset('sneat/assets/img/avatars/1.png'); // Default avatar
     }
 }
