@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -114,36 +115,48 @@ class ProfileController extends Controller
     {
         try {
             $request->validate([
-                'avatar' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+                'avatar' => [
+                    'required', 
+                    'image', 
+                    'mimes:jpeg,png,jpg,gif,webp', 
+                    'max:2048',
+                ],
             ]);
 
             $user = $request->user();
             
             // Delete old avatar if exists
-            if ($user->avatar && Storage::exists('public/avatars/' . $user->avatar)) {
-                Storage::delete('public/avatars/' . $user->avatar);
+            if ($user->avatar) {
+                Storage::disk('public')->delete('avatars/' . $user->avatar);
             }
 
-            // Store new avatar
-            $avatarName = time() . '.' . $request->avatar->extension();
-            $request->avatar->storeAs('public/avatars', $avatarName);
+            // Generate unique filename
+            $extension = $request->file('avatar')->getClientOriginalExtension();
+            $avatarName = 'avatar_' . $user->id . '_' . time() . '_' . Str::random(8) . '.' . $extension;
+            
+            // SOLUSI 1A: Menggunakan storeAs dengan disk public
+            $path = $request->file('avatar')->storeAs('avatars', $avatarName, 'public');
+            
+            if (!$path) {
+                throw new \Exception('Failed to store avatar file.');
+            }
 
             // Update user avatar
             $user->update(['avatar' => $avatarName]);
 
+            // Generate the correct URL - akan menghasilkan: /storage/avatars/filename.jpg
+            $avatarUrl = Storage::disk('public')->url('avatars/' . $avatarName);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Profile picture updated successfully!',
-                'avatar_url' => Storage::url('avatars/' . $avatarName)
+                'avatar_url' => $avatarUrl,
+                'avatar_name' => $avatarName
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
         } catch (\Exception $e) {
+            \Log::error('Avatar upload failed: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to upload avatar: ' . $e->getMessage()
