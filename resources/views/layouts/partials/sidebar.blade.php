@@ -105,7 +105,7 @@
             <div class="card-body p-3">
                 <div class="d-flex align-items-center">
                     <div class="avatar avatar-sm me-2">
-                        <img src="{{ asset('sneat/assets/img/avatars/1.png') }}" alt="Avatar" class="rounded-circle" style="border: 2px solid rgba(255,255,255,0.3);">
+                        <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="rounded-circle" style="border: 2px solid rgba(255,255,255,0.3);">
                     </div>
                     <div class="flex-grow-1">
                         <h6 class="mb-0 text-white" style="font-size: 0.875rem;">{{ auth()->user()->name }}</h6>
