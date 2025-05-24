@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Auth/AuthenticatedSessionController.php
 
 namespace App\Http\Controllers\Auth;
 
@@ -24,11 +25,20 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
-
-        $request->session()->regenerate();
-
-        return redirect()->intended(route('dashboard', absolute: false));
+        try {
+            $request->authenticate();
+            $request->session()->regenerate();
+            
+            // Flash message untuk login berhasil
+            return redirect()->intended(route('dashboard'))
+                ->with('success', 'Login berhasil! Selamat datang kembali.');
+                
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Flash message untuk login gagal akan ditangani otomatis oleh validation
+            return back()->withErrors([
+                'email' => 'Email atau password yang Anda masukkan salah.',
+            ])->onlyInput('email');
+        }
     }
 
     /**
@@ -39,9 +49,8 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/')->with('success', 'Berhasil logout.');
     }
 }

@@ -181,5 +181,29 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+    <script>
+        // Notifikasi untuk login gagal
+        @if(session('login_error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Gagal!',
+                text: '{{ session('login_error') }}',
+                confirmButtonColor: '#dc2626',
+                confirmButtonText: 'Coba Lagi'
+            });
+        @endif
+
+        // Jika ada validation errors
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Gagal!',
+                text: 'Periksa kembali email dan password Anda.',
+                confirmButtonColor: '#dc2626',
+                confirmButtonText: 'Coba Lagi'
+            });
+        @endif
+    </script>
 @endpush
 @endsection

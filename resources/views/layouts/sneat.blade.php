@@ -171,7 +171,20 @@
         }
     });
 </script>
+    <script>
+        // Success notification
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: '{{ session('success') }}',
+                confirmButtonColor: '#10b981',
+                timer: 3000,
+                timerProgressBar: true
+            });
+        @endif
+    </script>
 
-    @stack('scripts')
+@stack('scripts')
 </body>
 </html>

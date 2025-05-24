@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Laravel](https://img.shields.io/badge/Laravel-11.x-red.svg)
+![Laravel](https://img.shields.io/badge/Laravel-12.x-red.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Sneat](https://img.shields.io/badge/Template-Sneat-purple.svg)
@@ -97,8 +97,8 @@ A modern, professional Laravel admin starterkit featuring role-based authenticat
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/laravel-admin-starterkit.git
-cd laravel-admin-starterkit
+git clone https://github.com/saidyrev/starterkit-laravel12.git
+cd starterkit-laravel12
 ```
 
 ### 2. Install PHP Dependencies

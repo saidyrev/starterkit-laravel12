@@ -1,4 +1,5 @@
 <?php
+// app/Http/Requests/Auth/LoginRequest.php
 
 namespace App\Http\Requests\Auth;
 
@@ -22,7 +23,7 @@ class LoginRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
      */
     public function rules(): array
     {
@@ -43,6 +44,9 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+
+            // Set session untuk error
+            session()->flash('login_error', 'Email atau password yang Anda masukkan salah.');
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
